@@ -2,6 +2,9 @@
 using Microsoft.Extensions.Hosting;
 using System.Text;
 using Telegram.Bot;
+using SF.VoiceTexterBot.Module11.Controllers;
+using SF.VoiceTexterBot.Module11.Services;
+using SF.VoiceTexterBot.Module11.Configuration;
 
 namespace SF.VoiceTexterBot.Module11
 {
@@ -25,11 +28,39 @@ namespace SF.VoiceTexterBot.Module11
 
         static void ConfigureServices(IServiceCollection services)
         {
+            AppSettings appSettings = BuildAppSettigs();
+            services.AddSingleton(BuildAppSettigs());
+
+            //Подключаем хранилище пользовательских данных в памяти
+            services.AddSingleton<IStorage, MemoryStorage>();
+
+            // Подключаем контроллеры сообщений и кнопок
+            services.AddTransient<DefaultMessageController>();
+            services.AddTransient<VoiceMessageController>();
+            services.AddTransient<TextMessageController>();
+            services.AddTransient<InlineKeyboardController>();
+
             // Регистрируем объект TelegramBotClient с токеном подключения
             services.AddSingleton<ITelegramBotClient>(provider => new 
-            TelegramBotClient("7477165269:AAHJjwtxhEVc6ZNXxaxYcYsT8XU7u6Zkz3E"));
+            TelegramBotClient(appSettings.BotToken));
+
+            services.AddSingleton<IFileHandler, AudioFileHandler>();
+
             // Регистрируем постоянно активный сервис бота
             services.AddHostedService<Bot>();
+        }
+
+        static AppSettings BuildAppSettigs()
+        {
+            return new AppSettings()
+            {
+                DownloadsFolder = "D:\\Downloads",
+                BotToken = "7477165269:AAHJjwtxhEVc6ZNXxaxYcYsT8XU7u6Zkz3E",
+                AudioFileName = "audio",
+                InputAudioFormat = "ogg",
+                OutputAudioFormat = "wav",
+                InputAudioBitrate = 48000,
+            };
         }
     }
 }
